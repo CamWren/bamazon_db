@@ -20,8 +20,10 @@ connection.connect(function(err) {
 });
 
 
+var orderTotal = 0;
 var userChoice = [];
 var userQuantity = [];
+var stockQuantity = [];
 
 
 var displayAvailable = function() {
@@ -60,9 +62,22 @@ var userPrompt = function() {
     }
   }]).then(function(answer) {
     userChoice.push(answer.action);
-    console.log(userChoice);
     userQuantity.push(answer.quantity);
-    console.log(userQuantity);
+    checkInventory();
   });
 }
 
+
+function checkInventory() {
+    connection.query("SELECT stock_quantity FROM products WHERE ?", { item_id: userChoice[0] }, function(err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+          console.log("");
+          stockQuantity.push(res[i].stock_quantity);
+        }
+        console.log(stockQuantity[0]);
+        console.log("");
+        console.log("You are in luck, we have item " + userChoice[0] + " in stock!");
+        console.log("");
+    });
+}
