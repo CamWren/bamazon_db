@@ -19,12 +19,11 @@ connection.connect(function(err) {
   displayAvailable();
 });
 
-
-var orderTotal = 0;
 var userChoice = [];
 var userQuantity = [];
 var stockQuantity = [];
-
+var itemPrice = [];
+var dbStockQuantity = [];
 
 var displayAvailable = function() {
 	connection.query("SELECT * FROM products", function(err, res) {
@@ -69,15 +68,44 @@ var userPrompt = function() {
 
 
 function checkInventory() {
-    connection.query("SELECT stock_quantity FROM products WHERE ?", { item_id: userChoice[0] }, function(err, res) {
+    connection.query("SELECT stock_quantity, price FROM products WHERE ?", { item_id: userChoice[0] }, function(err, res) {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
           console.log("");
           stockQuantity.push(res[i].stock_quantity);
+          itemPrice.push(res[i].price);
         }
-        console.log(stockQuantity[0]);
-        console.log("");
-        console.log("You are in luck, we have item " + userChoice[0] + " in stock!");
-        console.log("");
-    });
+        if (stockQuantity[0] === 0) {
+          console.log("");
+          console.log("Out of stock.");
+          console.log("");
+        } else if (userQuantity[0] > stockQuantity[0]) {
+          console.log("");
+          console.log("We're sorry, we don't have enough to fulfill your order.");
+          console.log("");
+        } else if (stockQuantity[0] > 0 && stockQuantity[0] >= userQuantity[0]) {
+          var total = 0;
+          total += parseFloat(itemPrice[0] * userQuantity[0]);
+          console.log("");
+          console.log("You are in luck, we have item " + userChoice[0] + " in stock!");
+          console.log("");
+          console.log("Your order total is $" + total);
+          console.log("");
+          console.log("Thank you for your purchase!");
+          databaseUpdate();
+        }
+    });        
 }
+
+
+function databaseUpdate() {
+  var inventoryUpdate = stockQuantity[0] - userQuantity[0];
+  dbStockQuantity.push(inventoryUpdate);
+  connection.query("UPDATE `bamazon`.`products` SET `stock_quantity`='"+ dbStockQuantity +"' WHERE `item_id`='" + userChoice[0] + "'", function(err, res) {
+    if (err) throw err;
+  });
+}
+
+
+// Make it to where the user can continue to shop, buy multiple items, cancel their order, other improvements
+// Write order totaling function
